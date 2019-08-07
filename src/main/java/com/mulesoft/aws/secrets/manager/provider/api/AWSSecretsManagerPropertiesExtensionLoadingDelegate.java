@@ -59,7 +59,7 @@ public class AWSSecretsManagerPropertiesExtensionLoadingDelegate implements Exte
     addSecretsManagerParametersGroup
             .withRequiredParameter("region")
             .withDisplayModel(DisplayModel.builder().displayName("AWS Secrets Manager Region").build())
-            .ofType(typeLoader.load(RegionsEnum.class))
+            .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
             .withExpressionSupport(ExpressionSupport.SUPPORTED)
             .describedAs("AWS Secrets Manager region as us-east-2");
 

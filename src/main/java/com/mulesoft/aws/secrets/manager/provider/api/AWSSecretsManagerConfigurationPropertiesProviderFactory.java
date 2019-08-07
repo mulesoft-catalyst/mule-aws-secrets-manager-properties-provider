@@ -71,7 +71,7 @@ public class AWSSecretsManagerConfigurationPropertiesProviderFactory implements 
     ConfigurationParameters temp = secretManagersList.get(0);
 
     try {
-      accessKey = temp.getStringParameter("region");
+      region = temp.getStringParameter("region");
     } catch (Exception e) {
       LOGGER.error("region parameter not present");
       throw new RuntimeException("region parameter not present");
