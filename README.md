@@ -40,8 +40,12 @@ These can be provided through secure properties also.
 A sample config.
 ```
 <mule-aws-secrets-manager:config name="Mule_AWS_Secrets_Manager_Config"
-   		doc:name="Mule AWS Secrets Manager Config" doc:id="fd890b83-8a34-45ea-81c6-92a9c9f35ede">
-   		<mule-aws-secrets-manager:secrets-manager region="Oregon" accessKey="${secure::aws.access.key}" secretKey="${secure::aws.secret.key}" />
+   		doc:name="Mule AWS Secrets Manager Config" 
+		   doc:id="fd890b83-8a34-45ea-81c6-92a9c9f35ede">
+   		<mule-aws-secrets-manager:secrets-manager 
+		   region="us-east-2" 
+		   accessKey="${secure::aws.access.key}" 
+		   secretKey="${secure::aws.secret.key}" />
    	</mule-aws-secrets-manager:config>
 ```
 
@@ -61,10 +65,14 @@ be modified.
 
 ### Example Usage
 
-```<db:config name="Database_Config" doc:name="Database Config"
+```<db:config name="Database_Config" 
+		doc:name="Database Config"
 		doc:id="1cd519a8-9fbe-49c1-9b26-fc79231fe71d">
-		<db:my-sql-connection host="127.0.0.1" port="3306"
-			user="${aws-secrets::tester-user}" password="${aws-secrets::tester-password}" database="schema" />
+		<db:my-sql-connection host="127.0.0.1" 
+			port="3306"
+			user="${aws-secrets::tester-user}" 
+			password="${aws-secrets::tester-password}" 
+			database="schema" />
 </db:config>
 ```
 
