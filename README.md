@@ -65,7 +65,8 @@ be modified.
 
 ### Example Usage
 
-```<db:config name="Database_Config" 
+```
+<db:config name="Database_Config" 
 		doc:name="Database Config"
 		doc:id="1cd519a8-9fbe-49c1-9b26-fc79231fe71d">
 		<db:my-sql-connection host="127.0.0.1" 
