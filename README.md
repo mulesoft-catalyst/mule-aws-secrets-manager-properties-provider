@@ -26,8 +26,7 @@ Add this dependency to your application pom.xml
 ## Configuration
 
 ### Region
-Regions are provided in a drop down format. Behind the scenes, the common name is replaced by the actual region name.
-![alt text](regions.png)
+Regions are to be provided in plain text.
 
 ### Access and Secret Keys
 These should be provided as part of the wrapper.conf or during deployment.
