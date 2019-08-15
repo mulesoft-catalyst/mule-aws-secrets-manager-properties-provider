@@ -27,7 +27,7 @@ import static org.mule.runtime.api.meta.Category.SELECT;
  */
 public class AWSSecretsManagerPropertiesExtensionLoadingDelegate implements ExtensionLoadingDelegate {
 
-  public static final String EXTENSION_NAME = "Mule AWS Secrets Manager";
+  public static final String EXTENSION_NAME = "AWS Secrets Manager Properties Override";
   public static final String CONFIG_ELEMENT = "config";
   public static final String SECRETS_MANAGER_PARAMETER_GROUP = "Secrets Manager";
 

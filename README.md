@@ -43,12 +43,16 @@ AWS Secrets Manager.
 ### Example Config
 A sample config.
 ```
-<mule-aws-secrets-manager:config name="Mule_AWS_Secrets_Manager_Config"
-		doc:name="Mule AWS Secrets Manager Config" doc:id="fd890b83-8a34-45ea-81c6-92a9c9f35ede">
-		<mule-aws-secrets-manager:secrets-manager
-			region="us-east-2" accessKey="${aws.access.key}" secretKey="${aws.secret.key}"
-			secretName="${secret.name}" />
-	</mule-aws-secrets-manager:config>
+<aws-secrets-manager-properties-override:config
+		name="AWS_Secrets_Manager_Properties_Override_Config" 
+		doc:name="AWS Secrets Manager Properties Override Config"
+		doc:id="ee311c34-2103-437d-a965-3ba3c5709147">
+		<aws-secrets-manager-properties-override:secrets-manager 
+		region="us-east-2" 
+		accessKey="${aws.access.key}" 
+		secretKey="${aws.secret.key}" 
+		secretName="${secret.name}" />
+	</aws-secrets-manager-properties-override:config>
 ```
 
 ![alt text](sampleConfig.png)
