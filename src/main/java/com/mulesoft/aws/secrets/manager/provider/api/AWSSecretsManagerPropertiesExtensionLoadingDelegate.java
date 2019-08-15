@@ -76,5 +76,12 @@ public class AWSSecretsManagerPropertiesExtensionLoadingDelegate implements Exte
             .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
             .withExpressionSupport(ExpressionSupport.SUPPORTED)
             .describedAs("AWS Secret Key");
+
+    addSecretsManagerParametersGroup
+            .withRequiredParameter("secretName")
+            .withDisplayModel(DisplayModel.builder().displayName("Secret Name").build())
+            .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
+            .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .describedAs("AWS Secret Name");
   }
 }

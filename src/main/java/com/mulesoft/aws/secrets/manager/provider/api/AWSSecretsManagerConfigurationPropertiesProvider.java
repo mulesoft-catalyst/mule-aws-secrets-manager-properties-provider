@@ -26,15 +26,18 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
 
     private final AWSSecretsManager secretsManager;
 
-    public AWSSecretsManagerConfigurationPropertiesProvider(AWSSecretsManager secretsManager) {
+    private final String secretName;
+
+    public AWSSecretsManagerConfigurationPropertiesProvider(AWSSecretsManager secretsManager, String secretName) {
         this.secretsManager = secretsManager;
+        this.secretName = secretName;
     }
 
     @Override
     public Optional<ConfigurationProperty> getConfigurationProperty(String configurationAttributeKey) {
         LOGGER.error("==============================" + configurationAttributeKey);
         String modifiedText = configurationAttributeKey;
-        LOGGER.info("==============================" + modifiedText);
+        LOGGER.error("==============================" + modifiedText);
         if (modifiedText.startsWith(AWS_SECRETS_PREFIX)) {
             final String effectiveKey = modifiedText.substring(AWS_SECRETS_PREFIX.length());
             LOGGER.error("==============================" + effectiveKey);
@@ -73,9 +76,9 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
     }
 
     @DisplayName("Get Secret")
-    private String getSecret (String secretNameKeyPair) {
+    private String getSecret (String secretKey) {
 
-        String[] temp = secretNameKeyPair.split("-");
+        /*String[] temp = secretNameKeyPair.split(":");
 
         if (temp.length != 2) {
             throw new RuntimeException("Number of parameters required is 2");
@@ -83,6 +86,10 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
 
         String secretName = temp[0];
         String key = temp[1];
+
+        LOGGER.error("Secret Name ==============================" + secretName);*/
+        String key = secretKey;
+        LOGGER.error("Key ==============================" + key);
 
         String secret;
         ByteBuffer binarySecretData;

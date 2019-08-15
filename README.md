@@ -32,6 +32,10 @@ Regions are to be provided in plain text.
 These should be provided as part of the wrapper.conf or during deployment.
 These can be provided through secure properties also.
 
+### Secret Name
+The secret name should be provided against which Mule will fetch keys from 
+AWS Secrets Manager.
+
 ### Version Stage
 - For all purposes the version has been set to **AWSCURRENT** directly in the code.
 - The code can be changed to allow a user-based entry for this.
@@ -40,13 +44,11 @@ These can be provided through secure properties also.
 A sample config.
 ```
 <mule-aws-secrets-manager:config name="Mule_AWS_Secrets_Manager_Config"
-   		doc:name="Mule AWS Secrets Manager Config" 
-		   doc:id="fd890b83-8a34-45ea-81c6-92a9c9f35ede">
-   		<mule-aws-secrets-manager:secrets-manager 
-		   region="us-east-2" 
-		   accessKey="${secure::aws.access.key}" 
-		   secretKey="${secure::aws.secret.key}" />
-   	</mule-aws-secrets-manager:config>
+		doc:name="Mule AWS Secrets Manager Config" doc:id="fd890b83-8a34-45ea-81c6-92a9c9f35ede">
+		<mule-aws-secrets-manager:secrets-manager
+			region="us-east-2" accessKey="${aws.access.key}" secretKey="${aws.secret.key}"
+			secretName="${secret.name}" />
+	</mule-aws-secrets-manager:config>
 ```
 
 ![alt text](sampleConfig.png)
@@ -59,9 +61,7 @@ A sample config.
 
 ### Secret Name and Key
 - There can be `n` number of secrets in AWS Secrets Manager. The best way to access a particular key
-`${aws-secrets::secretName-key}`
-- `-` will be used to fetch the particular `key` from the secret name `secretName`. This delimiter can
-be modified.
+`${aws-secrets::key}`
 
 ### Example Usage
 
@@ -71,12 +71,12 @@ be modified.
 		doc:id="1cd519a8-9fbe-49c1-9b26-fc79231fe71d">
 		<db:my-sql-connection host="127.0.0.1" 
 			port="3306"
-			user="${aws-secrets::tester-user}" 
-			password="${aws-secrets::tester-password}" 
+			user="${aws-secrets::db.username}" 
+			password="${aws-secrets::db.password}" 
 			database="schema" />
 </db:config>
 ```
 
 ## Contributors
 
-Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan
+Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi

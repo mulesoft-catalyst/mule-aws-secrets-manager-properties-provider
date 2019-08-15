@@ -47,8 +47,20 @@ public class AWSSecretsManagerConfigurationPropertiesProviderFactory implements 
 
   @Override
   public ConfigurationPropertiesProvider createProvider(ConfigurationParameters parameters, ResourceProvider externalResourceProvider) {
+    String secretName = null;
+    List<ConfigurationParameters> secretManagersList = parameters
+            .getComplexConfigurationParameter(builder()
+                    .namespace(EXTENSION_NAMESPACE)
+                    .name(SECRETS_MANAGER_PARAMETER_GROUP_NAME).build());
+    ConfigurationParameters temp = secretManagersList.get(0);
     try {
-      return new AWSSecretsManagerConfigurationPropertiesProvider(getAWSSecretsManager(parameters));
+      secretName = temp.getStringParameter("secretName");
+    } catch (Exception e) {
+      LOGGER.error("secretName parameter not present");
+      throw new RuntimeException("secretName parameter not present");
+    }
+    try {
+      return new AWSSecretsManagerConfigurationPropertiesProvider(getAWSSecretsManager(parameters), secretName);
     } catch (Exception ve) {
       LOGGER.error("Error connecting to AWS Secrets Manager", ve);
       return null;
