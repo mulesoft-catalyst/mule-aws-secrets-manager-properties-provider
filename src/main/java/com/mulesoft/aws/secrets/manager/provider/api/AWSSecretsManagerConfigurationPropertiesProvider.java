@@ -1,46 +1,62 @@
 package com.mulesoft.aws.secrets.manager.provider.api;
 
-import com.amazonaws.services.secretsmanager.AWSSecretsManager;
-import com.amazonaws.services.secretsmanager.model.*;
+
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
+
 import org.mule.runtime.config.api.dsl.model.properties.ConfigurationPropertiesProvider;
 import org.mule.runtime.config.api.dsl.model.properties.ConfigurationProperty;
 import org.mule.runtime.extension.api.annotation.param.display.DisplayName;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.MapType;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+
+import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.*;
+
+import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.AWS_SECRETS_PREFIX;
+
 public class AWSSecretsManagerConfigurationPropertiesProvider implements ConfigurationPropertiesProvider {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(AWSSecretsManagerConfigurationPropertiesProvider.class);
-
-    private final static String AWS_SECRETS_PREFIX = "aws-secrets::";
+    private final static Logger logger = LoggerFactory.getLogger(AWSSecretsManagerConfigurationPropertiesProvider.class);
 
     private final static Pattern AWS_SECRETS_PATTERN = Pattern.compile("\\$\\{" + AWS_SECRETS_PREFIX + "[^}]*}");
 
-    private final AWSSecretsManager secretsManager;
+    private Map <String, String> secretsCache = new ConcurrentHashMap<>();
+
+    private final SecretsManagerClient secretsManagerClient;
 
     private final String secretName;
 
-    public AWSSecretsManagerConfigurationPropertiesProvider(AWSSecretsManager secretsManager, String secretName) {
-        this.secretsManager = secretsManager;
+    private final MapType mapType = TypeFactory.defaultInstance().constructMapType(HashMap.class, String.class, String.class);
+
+    public AWSSecretsManagerConfigurationPropertiesProvider(SecretsManagerClient secretsManagerClient, String secretName) {
+        this.secretsManagerClient = secretsManagerClient;
         this.secretName = secretName;
     }
 
     @Override
     public Optional<ConfigurationProperty> getConfigurationProperty(String configurationAttributeKey) {
-        LOGGER.error("==============================" + configurationAttributeKey);
+        if (logger.isDebugEnabled())
+            logger.debug ("ConfigAttributeKey: {}", configurationAttributeKey);
         String modifiedText = configurationAttributeKey;
-        LOGGER.error("==============================" + modifiedText);
+
         if (modifiedText.startsWith(AWS_SECRETS_PREFIX)) {
-            final String effectiveKey = modifiedText.substring(AWS_SECRETS_PREFIX.length());
-            LOGGER.error("==============================" + effectiveKey);
+            final String effectiveKey = modifiedText.substring (AWS_SECRETS_PREFIX.length());
+            if (logger.isDebugEnabled())
+                logger.debug ("Effective Key: {}" , effectiveKey);
             try {
                 final String value = getSecret(effectiveKey);
                 if (value != null) {
@@ -77,56 +93,49 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
 
     @DisplayName("Get Secret")
     private String getSecret (String secretKey) {
-
-        /*String[] temp = secretNameKeyPair.split(":");
-
-        if (temp.length != 2) {
-            throw new RuntimeException("Number of parameters required is 2");
+        if (this.secretsCache.containsKey (secretKey) ) {
+            if (logger.isDebugEnabled())
+                logger.debug ("Cache Hit for key: {}" , secretKey);
+            return getValueFromCache(secretKey);
         }
+        if (logger.isDebugEnabled())
+            logger.debug ("AWS SM Lookup for Key  {} within secret Id: {}" , secretKey, this.secretName);
 
-        String secretName = temp[0];
-        String key = temp[1];
-
-        LOGGER.error("Secret Name ==============================" + secretName);*/
-        String key = secretKey;
-        LOGGER.error("Key ==============================" + key);
-
-        String secret;
-        ByteBuffer binarySecretData;
-        GetSecretValueRequest getSecretValueRequest = new GetSecretValueRequest()
-                .withSecretId(secretName).withVersionStage("AWSCURRENT");
-        GetSecretValueResult getSecretValueResult = null;
+        GetSecretValueResponse valueResponse = null;
         try {
-            getSecretValueResult = secretsManager.getSecretValue(getSecretValueRequest);
-
-        } catch(ResourceNotFoundException e) {
-            LOGGER.error("The secret was not found", e.getMessage());
-            throw new ResourceNotFoundException("The requested secret " + secretName + " was not found");
-        } catch (InvalidRequestException e) {
-            LOGGER.error("The request was invalid due to: ", e.getMessage());
-            throw new InvalidRequestException("The request was invalid due to: " + e.getMessage());
-        } catch (InvalidParameterException e) {
-            LOGGER.error("The secret was not found", e.getMessage());
-            throw new InvalidParameterException("The request had invalid params: " + e.getMessage());
+            GetSecretValueRequest valueRequest = GetSecretValueRequest.builder()
+                    .secretId(this.secretName)
+                    .versionStage(AWS_CURRENT_VERSION)
+                    .build();
+            valueResponse = secretsManagerClient.getSecretValue(valueRequest);
+        } catch(SecretsManagerException e) {
+            logger.error("Failed to Get Secret from AWS SM -- {} ", e.getMessage());
+            throw new RuntimeException ("The requested secret " + secretName + " was not found");
         }
 
-        if(getSecretValueResult == null) {
+        if(valueResponse == null) {
             return null;
         }
 
-        Map<String, String> secretMap = new HashMap();
+        String secret = null;
 
-        if(getSecretValueResult.getSecretString() != null) {
-            secret = getSecretValueResult.getSecretString();
-            secretMap = returnSecrets(secret);
+        if(valueResponse.secretString() != null) {
+            secret = valueResponse.secretString();
         }
         else {
-            binarySecretData = getSecretValueResult.getSecretBinary();
-            secret = binarySecretData.toString();
-            secretMap = returnSecrets(secret);
+            secret = new String (
+                        Base64.getDecoder().decode(
+                                valueResponse.secretBinary().asByteBuffer()
+                        ).array()
+                    );
         }
 
-        return secretMap.get(key);
+        updateSecretCache (secret);
+        return getValueFromCache(secretKey);
+    }
+
+    private String getValueFromCache (String key) {
+        return this.secretsCache.get(key);
     }
 
     private static Map<String, String> returnSecrets (String secret) {
@@ -134,8 +143,24 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
         sample = sample.replace("{", "");
         sample = sample.replace("}", "");
         Map<String, String> secretMap = (HashMap<String, String>)
-                Arrays.asList(sample.split(",")).stream().map(s -> s.split(":")).collect(Collectors.toMap(e -> e[0],
-                        e -> e[1]));
+                Arrays.asList(
+                        sample.split(",")
+                ).stream().map(
+                        s -> s.split(":")
+                ).collect(
+                        Collectors.toMap(e -> e[0], e -> e[1])
+                );
         return secretMap;
+    }
+
+    private void updateSecretCache (String secretData) {
+        ObjectMapper mapper = new ObjectMapper ();
+        try {
+            Map<String, String> interimMap =  mapper.readValue (secretData, mapType);
+            secretsCache = interimMap;
+        } catch (IOException e) {
+            logger.error("Failed to Refresh the Cache -- {} ", e.toString());
+            throw new RuntimeException("Failed to Refresh the Cache from AWS SM");
+        }
     }
 }

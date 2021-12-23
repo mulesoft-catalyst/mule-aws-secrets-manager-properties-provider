@@ -13,10 +13,10 @@ import org.mule.runtime.api.meta.model.declaration.fluent.ConfigurationDeclarer;
 import org.mule.runtime.api.meta.model.declaration.fluent.ExtensionDeclarer;
 import org.mule.runtime.api.meta.model.declaration.fluent.ParameterGroupDeclarer;
 import org.mule.runtime.api.meta.model.display.DisplayModel;
-import org.mule.runtime.extension.api.declaration.type.ExtensionsTypeLoaderFactory;
 import org.mule.runtime.extension.api.loader.ExtensionLoadingContext;
 import org.mule.runtime.extension.api.loader.ExtensionLoadingDelegate;
 
+import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.*;
 import static org.mule.metadata.api.model.MetadataFormat.JAVA;
 import static org.mule.runtime.api.meta.Category.SELECT;
 
@@ -26,10 +26,6 @@ import static org.mule.runtime.api.meta.Category.SELECT;
  * @since 1.0
  */
 public class AWSSecretsManagerPropertiesExtensionLoadingDelegate implements ExtensionLoadingDelegate {
-
-  public static final String EXTENSION_NAME = "AWS Secrets Manager Properties Override";
-  public static final String CONFIG_ELEMENT = "config";
-  public static final String SECRETS_MANAGER_PARAMETER_GROUP = "Secrets Manager";
 
   @Override
   public void accept(ExtensionDeclarer extensionDeclarer, ExtensionLoadingContext context) {
@@ -55,33 +51,74 @@ public class AWSSecretsManagerPropertiesExtensionLoadingDelegate implements Exte
             .onParameterGroup(SECRETS_MANAGER_PARAMETER_GROUP)
             .withDslInlineRepresentation(true);
 
-    ClassTypeLoader typeLoader = ExtensionsTypeLoaderFactory.getDefault().createTypeLoader();
-    addSecretsManagerParametersGroup
-            .withRequiredParameter("region")
-            .withDisplayModel(DisplayModel.builder().displayName("AWS Secrets Manager Region").build())
+    ParameterGroupDeclarer addBasicConnectionParametersGroup = configurationDeclarer
+            .onParameterGroup(AWS_BASIC_CONNECTION_PARAMETER_GROUP)
+            .withDslInlineRepresentation(true);
+
+    ParameterGroupDeclarer addRoleConnectionParametersGroup = configurationDeclarer
+            .onParameterGroup(AWS_ROLE_CONNECTION_PARAMETER_GROUP)
+            .withDslInlineRepresentation(true);
+
+    ParameterGroupDeclarer addAdvancedConnectionParametersGroup = configurationDeclarer
+            .onParameterGroup(AWS_ADVANCED_CONNECTION_PARAMETER_GROUP)
+            .withDslInlineRepresentation(true);
+
+//    ClassTypeLoader typeLoader = ExtensionsTypeLoaderFactory.getDefault().createTypeLoader();
+    addBasicConnectionParametersGroup
+            .withRequiredParameter (AWS_REGION)
             .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
             .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("AWS Secrets Manager Region").build())
             .describedAs("AWS Secrets Manager region as us-east-2");
 
-    addSecretsManagerParametersGroup
-            .withRequiredParameter("accessKey")
-            .withDisplayModel(DisplayModel.builder().displayName("AWS Access Key").build())
+    addBasicConnectionParametersGroup
+            .withOptionalParameter(AWS_ACCESS_KEY)
             .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
             .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("AWS Access Key").build())
             .describedAs("AWS Access Key");
 
-    addSecretsManagerParametersGroup
-            .withRequiredParameter("secretKey")
-            .withDisplayModel(DisplayModel.builder().displayName("AWS Secret Key").build())
+    addBasicConnectionParametersGroup
+            .withOptionalParameter (AWS_SECRET_KEY)
             .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
             .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("AWS Secret Key").build())
             .describedAs("AWS Secret Key");
 
-    addSecretsManagerParametersGroup
-            .withRequiredParameter("secretName")
-            .withDisplayModel(DisplayModel.builder().displayName("Secret Name").build())
+    addBasicConnectionParametersGroup
+            .withOptionalParameter (AWS_SESSION_TOKEN)
             .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
             .withExpressionSupport(ExpressionSupport.SUPPORTED)
-            .describedAs("AWS Secret Name");
+            .withDisplayModel(DisplayModel.builder().displayName("Session Token").build())
+            .describedAs("The session token provided by Amazon STS.");
+
+    addRoleConnectionParametersGroup
+            .withOptionalParameter (AWS_ROLE_ARN)
+            .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
+            .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("Role ARN").build())
+            .describedAs("The Role ARN unique identifies role to assume in order to gain cross account access.");
+
+    addSecretsManagerParametersGroup
+            .withRequiredParameter(SECRET_NAME)
+            .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
+            .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("Secret Name").build())
+            .describedAs("Name of the AWS Secret. Prepend Environment if required.");
+
+    addAdvancedConnectionParametersGroup
+            .withOptionalParameter(AWS_CUSTOM_SERVICE_ENDPOINT)
+            .ofType(BaseTypeBuilder.create(JAVA).stringType().build())
+            .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("Custom Service Endpoint").build())
+            .describedAs("Sets a custom service endpoint. Useful when a non-standard service endpoint is required, such as a VPC endpoint.");
+
+    addAdvancedConnectionParametersGroup
+            .withOptionalParameter(AWS_USE_DEFAULT_PROVIDER_CHAIN)
+            .ofType(BaseTypeBuilder.create(JAVA).booleanType().build())
+            .defaultingTo(Boolean.FALSE)
+            .withExpressionSupport(ExpressionSupport.SUPPORTED)
+            .withDisplayModel(DisplayModel.builder().displayName("Use Default AWSCredentials Provider Chain").build())
+            .describedAs("Set this field to true to obtain credentials from the AWS environment, See: https://docs.aws.amazon.com/sdk-for-java/v2/developer-guide/credentials.html\"");
   }
 }

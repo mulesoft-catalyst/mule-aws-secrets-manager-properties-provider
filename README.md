@@ -1,5 +1,19 @@
 # AWS Secrets Manager for Properties Override for Mule 4
 
+This module allows externalizing application properties using AWS Secrets Manager.
+This module retrieves the all secrets (at startup/first use) and caches them for subsequent re-use. 
+
+The module provides following ways to connect to AWS.
+They are not mutually exclusive (for example, Default provider chain and Assume Role can be used together)
+- Use the default credentials Provider chain. This supports credentials in the following order 
+  - Java System Properties (aws.accessKeyId and aws.secretAccessKey)
+  - System environment variables (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)
+  - Default Credentials file (normally in the user's home directory, but varies by platform)
+  - Amazon ECS environment variable (AWS_CONTAINER_CREDENTIALS_RELATIVE_URI)
+  - Instance profile credentials within the instance metadata associated with IAM role for EC2 instances (Preferred for Mule apps running on EC2)
+- Basic Connection using AWS Access Key and Secret Key
+- Assume IAM Role 
+
 This module will be used to override properties during deployment. This will work in tandem with
 - properties placeholder
 - secure properties placeholder
@@ -16,7 +30,7 @@ Add this dependency to your application pom.xml
 
 ```
 <dependency>
-	<groupId>${groupId}</groupId>
+	<groupId>${anypoiont.organzationId}</groupId>
 	<artifactId>mule-aws-secrets-manager-properties-providers-module</artifactId>
 	<version>${version}</version>
 	<classifier>mule-plugin</classifier>
@@ -25,37 +39,83 @@ Add this dependency to your application pom.xml
 
 ## Configuration
 
-### Region
+### Secret Name
+The secret name should be provided against which Mule will fetch keys from
+AWS Secrets Manager.
+
+### Basic Connection Parameters
+
+#### Region
 Regions are to be provided in plain text.
 
-### Access and Secret Keys
+#### Access Key, Secret Key and Session Token
 These should be provided as part of the wrapper.conf or during deployment.
-These can be provided through secure properties also.
+These can be provided through secure properties as well. Session Token is optional. 
+The user needs to have access to use the Keys used for encrypting secrets
 
-### Secret Name
-The secret name should be provided against which Mule will fetch keys from 
-AWS Secrets Manager.
+#### Example Config
+
+```
+<aws-secrets-manager-properties-override:config
+    name="AWS_Secrets_Manager_Properties_Override_Config"
+    doc:name="AWS Secrets Manager Properties Override Config"
+    doc:id="154e6c95-bc88-4056-b527-41d62046fa2a">
+    <aws-secrets-manager-properties-override:secrets-manager
+        secretName="${secret.name}" />
+    <aws-secrets-manager-properties-override:basic-connection
+        region="us-east-1" accessKey="${aws.access.key}"
+        secretKey="${aws.secret.key}" />
+</aws-secrets-manager-properties-override:config>
+```
+
+![basicConnection](basicConnection.png)
+
+### Role Connection Parameters
+#### Role ARN
+Role ARN is required for Assuming an IAM role for Secrets Manager connection.
+This role also needs to have access to have access to use the Keys used for encrypting the secrets.
+
+```
+<aws-secrets-manager-properties-override:config
+    name="AWS_Secrets_Manager_Properties_Override_Config"
+    doc:name="AWS Secrets Manager Properties Override Config"
+    doc:id="154e6c95-bc88-4056-b527-41d62046fa2a">
+    <aws-secrets-manager-properties-override:secrets-manager
+        secretName="${secret.name}" />
+    <aws-secrets-manager-properties-override:basic-connection
+        region="us-east-1" accessKey="${aws.access.key}"
+        secretKey="${aws.secret.key}" />
+    <aws-secrets-manager-properties-override:role-connection
+        roleARN="${aws.role.arn}" />
+</aws-secrets-manager-properties-override:config>
+```
+![AssumeRoleConnection](AssumeRoleConnection.png)
+
+### Advanced Connection Parameters
+#### Custom Service Endpoint
+Used to set a VPC endpoint instead of the standard Region endpoint.
+
+#### Use Default AWSCredentials Provider Chain
+Set this field to true to obtain credentials from the AWS environment, See: https://docs.aws.amazon.com/sdk-for-java/v2/developer-guide/credentials.html
+
+```
+<aws-secrets-manager-properties-override:config
+    name="AWS_Secrets_Manager_Properties_Override_Config"
+    doc:name="AWS Secrets Manager Properties Override Config"
+    doc:id="154e6c95-bc88-4056-b527-41d62046fa2a">
+    <aws-secrets-manager-properties-override:secrets-manager
+        secretName="${secret.name}" />
+    <aws-secrets-manager-properties-override:basic-connection
+        region="us-east-1"/>
+    <aws-secrets-manager-properties-override:advanced-connection useDefaultAWSCredentialsProviderChain="true" />
+</aws-secrets-manager-properties-override:config>
+```
+
+![useDefaultCredentialsProvider](useDefaultCredentialProviderChain.png)
 
 ### Version Stage
 - For all purposes the version has been set to **AWSCURRENT** directly in the code.
 - The code can be changed to allow a user-based entry for this.
-
-### Example Config
-A sample config.
-```
-<aws-secrets-manager-properties-override:config
-		name="AWS_Secrets_Manager_Properties_Override_Config" 
-		doc:name="AWS Secrets Manager Properties Override Config"
-		doc:id="ee311c34-2103-437d-a965-3ba3c5709147">
-		<aws-secrets-manager-properties-override:secrets-manager 
-		region="us-east-2" 
-		accessKey="${aws.access.key}" 
-		secretKey="${aws.secret.key}" 
-		secretName="${secret.name}" />
-	</aws-secrets-manager-properties-override:config>
-```
-
-![alt text](sampleConfig.png)
 
 ## Usage
 
@@ -82,5 +142,4 @@ A sample config.
 ```
 
 ## Contributors
-
-Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi
+Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi, Sudhish Sikhamani
