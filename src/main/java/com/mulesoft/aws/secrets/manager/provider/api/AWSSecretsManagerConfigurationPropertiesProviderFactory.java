@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 
 import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.*;
@@ -70,14 +71,15 @@ public class AWSSecretsManagerConfigurationPropertiesProviderFactory implements 
                     .namespace(EXTENSION_NAMESPACE)
                     .name(AWS_ROLE_CONNECTION_PARAMETER_GROUP_NAME).build());
 
-    ConfigurationParameters roleConnectionParams = roleConnectionsList.get(0);
+    ConfigurationParameters roleConnectionParams = roleConnectionsList.isEmpty() ? null : roleConnectionsList.get(0);
 
     List<ConfigurationParameters> advancedConnectionsList = parameters
             .getComplexConfigurationParameter(builder()
                     .namespace(EXTENSION_NAMESPACE)
                     .name(AWS_ADVANCED_CONNECTION_PARAMETER_GROUP_NAME).build());
 
-    ConfigurationParameters advConnectionsParams = advancedConnectionsList.get(0);
+
+    ConfigurationParameters advConnectionsParams = advancedConnectionsList.isEmpty() ? null : advancedConnectionsList.get(0);
 
 
     String secretName = getStringParameter (smParams, SECRET_NAME);
@@ -87,10 +89,16 @@ public class AWSSecretsManagerConfigurationPropertiesProviderFactory implements 
     String secretKey = getStringParameter(basicConnectionParams, AWS_SECRET_KEY);
     String sessionToken = getStringParameter(basicConnectionParams, AWS_SESSION_TOKEN);
 
-    String roleARN = getStringParameter(roleConnectionParams, AWS_ROLE_ARN);
+    String roleARN = null;
+    if (roleConnectionParams != null)
+     roleARN = getStringParameter(roleConnectionParams, AWS_ROLE_ARN);
 
-    String customEndpoint = getStringParameter(advConnectionsParams, AWS_CUSTOM_SERVICE_ENDPOINT);
-    boolean useDefaultAWSCredentialsProviderChain = Boolean.parseBoolean(getStringParameter(advConnectionsParams, AWS_USE_DEFAULT_PROVIDER_CHAIN));
+    String customEndpoint = null;
+    boolean useDefaultAWSCredentialsProviderChain = false;
+    if (advConnectionsParams != null) {
+      customEndpoint = getStringParameter(advConnectionsParams, AWS_CUSTOM_SERVICE_ENDPOINT);
+      useDefaultAWSCredentialsProviderChain = Boolean.parseBoolean(getStringParameter(advConnectionsParams, AWS_USE_DEFAULT_PROVIDER_CHAIN));
+    }
 
     if (!useDefaultAWSCredentialsProviderChain &&
             (StringUtils.isEmpty(accessKey) || StringUtils.isEmpty(secretKey))) {
@@ -132,7 +140,7 @@ public class AWSSecretsManagerConfigurationPropertiesProviderFactory implements 
   private SecretsManagerClient createAWSSecretsManager(String region,  String accessKey, String secretKey,
                                                        String sessionToken, String customEndpoint, boolean useDefaultAWSCredentialsProviderChain, String roleARN) {
 
-    logger.debug ("Region: {}, Custom Endpoint: [{}], Try Default Credentials Provider Chain: {}, RoleARN: {}", region,
+    logger.debug ("Region: [{}], Custom Endpoint: [{}], Try Default Credentials Provider Chain: [{}], RoleARN: [{}]", region,
             customEndpoint, useDefaultAWSCredentialsProviderChain, roleARN);
 
     URI endpoint = getEndpoint (region, customEndpoint);
