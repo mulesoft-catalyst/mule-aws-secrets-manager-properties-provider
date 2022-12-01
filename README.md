@@ -128,8 +128,7 @@ Set this field to true to obtain credentials from the AWS environment, See: http
 `${aws-secrets::key}`
 
 ### Caching vs Real-Time
-Accessing via "`${aws-secrets::key}`" gives you cached value that is retrieved by a connector when mule app was deployed. Use dataweave ::p expression to get the secrets from aws "real-time". Example is :
-#[Mule::p(“aws-secrets::db1-pass”)]
+Accessing via "`${aws-secrets::key}`" gives you cached value that is retrieved by a connector when mule app was deployed. Use dataweave ::p expression to get the secrets from aws "real-time". Example is : '#[Mule::p(“aws-secrets::db1-pass”)]'
 
 ### Example Usage
 
