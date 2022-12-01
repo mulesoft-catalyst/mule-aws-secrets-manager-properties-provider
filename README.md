@@ -18,12 +18,12 @@ This module will be used to override properties during deployment. This will wor
 - properties placeholder
 - secure properties placeholder
 
-## Deploying to Exchange
-Clone the project to your local, change the groupId to point your orgId. Issue `mvn deploy`.
-Ensure that there is an entry in your settings.xml pertaining to Exchange2
-
-## Local Install
-For local install, give any groupId. Issue `mvn clean install`
+## Installation
+- Clone the aws-secrets-manager-properties-provider
+- Update the GroupId with your organization Id in Pom.xml.
+- Ensure that there is an entry in your settings.xml pertaining to Exchange2
+- Install to the Local Maven Repository - use mvn clean install
+- Installing to Organization's Exchange - use mvn clean deploy
 
 ## Using the module in a Mule4 Project
 Add this dependency to your application pom.xml
@@ -146,4 +146,4 @@ Accessing via "`${aws-secrets::key}`" gives you cached value that is retrieved b
 ```
 
 ## Contributors
-Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi, Sudhish Sikhamani
+Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi, Sudhish Sikhamani, Nabraj Khatri
