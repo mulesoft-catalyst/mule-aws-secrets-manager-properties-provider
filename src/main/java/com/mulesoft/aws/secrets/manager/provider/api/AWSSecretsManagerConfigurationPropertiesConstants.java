@@ -13,6 +13,7 @@ public final class AWSSecretsManagerConfigurationPropertiesConstants {
     public static final String AWS_USE_DEFAULT_PROVIDER_CHAIN = "useDefaultAWSCredentialsProviderChain";
 
     public final static String AWS_SECRETS_PREFIX = "aws-secrets::";
+    public final static String REAL_TIME_PREFIX = "real-time::";
 
     public static final String EXTENSION_NAME = "AWS Secrets Manager Properties Override";
     public static final String CONFIG_ELEMENT = "config";
