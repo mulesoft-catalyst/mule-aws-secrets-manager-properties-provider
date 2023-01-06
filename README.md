@@ -142,4 +142,4 @@ Set this field to true to obtain credentials from the AWS environment, See: http
 ```
 
 ## Contributors
-Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi, Sudhish Sikhamani
+Biswa Mohanty, Rahul Dureja, Srinivasan Raghunathan, Sai Parnandi, Sudhish Sikhamani, Nabraj Khatri
