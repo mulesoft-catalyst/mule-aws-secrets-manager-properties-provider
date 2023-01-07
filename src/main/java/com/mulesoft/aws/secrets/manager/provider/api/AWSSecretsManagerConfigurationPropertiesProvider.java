@@ -18,15 +18,14 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 
 import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.*;
-
 import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.AWS_SECRETS_PREFIX;
+import static com.mulesoft.aws.secrets.manager.provider.api.AWSSecretsManagerConfigurationPropertiesConstants.REAL_TIME_PREFIX;
 
 public class AWSSecretsManagerConfigurationPropertiesProvider implements ConfigurationPropertiesProvider {
 
@@ -79,10 +78,9 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
                     });
                 }
             } catch (Exception e) {
-                   return Optional.empty();
-                }
+                return Optional.empty();
+            }
         }
-
         return Optional.empty();
     }
 
@@ -93,11 +91,23 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
 
     @DisplayName("Get Secret")
     private String getSecret (String secretKey) {
-        if (this.secretsCache.containsKey (secretKey) ) {
+        boolean realTimeFetch = false;
+
+        if (secretKey.startsWith(REAL_TIME_PREFIX))
+            realTimeFetch = true;
+
+        if (realTimeFetch) {
+            secretKey = secretKey.substring(REAL_TIME_PREFIX.length());
             if (logger.isDebugEnabled())
-                logger.debug ("Cache Hit for key: {}" , secretKey);
-            return getValueFromCache(secretKey);
+                logger.debug ("real-time fetch for " + secretKey);
+        } else {
+            if (this.secretsCache.containsKey (secretKey) ) {
+                if (logger.isDebugEnabled())
+                    logger.debug ("Cache Hit for key: {}" , secretKey);
+                return getValueFromCache(secretKey);
+            }
         }
+
         if (logger.isDebugEnabled())
             logger.debug ("AWS SM Lookup for Key  {} within secret Id: {}" , secretKey, this.secretName);
 
@@ -114,6 +124,7 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
         }
 
         if(valueResponse == null) {
+            logger.error("Failed to Get Secret from AWS SM - valueResponse is empty ");
             return null;
         }
 
@@ -124,33 +135,31 @@ public class AWSSecretsManagerConfigurationPropertiesProvider implements Configu
         }
         else {
             secret = new String (
-                        Base64.getDecoder().decode(
-                                valueResponse.secretBinary().asByteBuffer()
-                        ).array()
-                    );
+                    Base64.getDecoder().decode(
+                            valueResponse.secretBinary().asByteBuffer()
+                    ).array()
+            );
         }
 
-        updateSecretCache (secret);
-        return getValueFromCache(secretKey);
+        if (realTimeFetch) {
+            ObjectMapper mapper = new ObjectMapper ();
+            Map <String, String> secretsCacheTemp = new ConcurrentHashMap<>();
+            try {
+                Map<String, String> interimMap =  mapper.readValue (secret, mapType);
+                secretsCacheTemp = interimMap;
+            } catch (IOException e) {
+                logger.error("Failed to Refresh the Cache -- {} ", e.toString());
+                return null;
+            }
+            return secretsCacheTemp.get(secretKey);
+        } else {
+            updateSecretCache (secret);
+            return getValueFromCache(secretKey);
+        }
     }
 
     private String getValueFromCache (String key) {
         return this.secretsCache.get(key);
-    }
-
-    private static Map<String, String> returnSecrets (String secret) {
-        String sample = secret.replaceAll("\"","");
-        sample = sample.replace("{", "");
-        sample = sample.replace("}", "");
-        Map<String, String> secretMap = (HashMap<String, String>)
-                Arrays.asList(
-                        sample.split(",")
-                ).stream().map(
-                        s -> s.split(":")
-                ).collect(
-                        Collectors.toMap(e -> e[0], e -> e[1])
-                );
-        return secretMap;
     }
 
     private void updateSecretCache (String secretData) {
