@@ -19,8 +19,8 @@ This module will be used to override properties during deployment. This will wor
 - secure properties placeholder
 
 ## Deploying to Exchange
-Clone the project to your local, change the groupId to point your orgId. Issue `mvn deploy`.
-Ensure that there is an entry in your settings.xml pertaining to Exchange2
+To deploy to Exchange, run the script named deploy.sh as follows `./deploy.sh <YOUR_ORG_ID>`
+Please ensure that your settings.xml has been configured with the correct Exchange credentials so that the publish can succeed.
 
 ## Local Install
 For local install, give any groupId. Issue `mvn clean install`
