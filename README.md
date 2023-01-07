@@ -127,6 +127,11 @@ Set this field to true to obtain credentials from the AWS environment, See: http
 - There can be `n` number of secrets in AWS Secrets Manager. The best way to access a particular key
 `${aws-secrets::key}`
 
+#### Mule App startup time
+- To access a particular key Mule App startup time`${aws-secrets::key}`
+#### transaction time (real time)
+- To access a particular key add real-time prefix as well, for example `${aws-secrets::real-time::key}`
+
 ### Example Usage
 
 ```
